@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 260" width="400" height="260">
+
+<rect width="400" height="260" fill="#F6EFE3"/>
+<circle cx="200" cy="105" r="62" fill="none" stroke="#E3DBCB" stroke-width="10"/>
+<path d="M166 105 V78 Q166 66 178 66 H222 Q234 66 234 78 V105" fill="#C77B4A"/>
+<path d="M166 118 h68" stroke="#C77B4A" stroke-width="10"/>
+<rect x="184" y="52" width="32" height="20" rx="6" fill="#E9A23B"/>
+<text x="200" y="205" text-anchor="middle" font-size="22" font-family="sans-serif" fill="#2B2A28">还没有成绩</text>
+<text x="200" y="238" text-anchor="middle" font-size="15" font-family="sans-serif" fill="#6E6A62">第一个上榜的人就是你</text>
+
+</svg>

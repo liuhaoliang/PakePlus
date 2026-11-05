@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 260" width="400" height="260">
+
+<rect width="400" height="260" fill="#F6EFE3"/>
+<circle cx="90" cy="96" r="34" fill="#FF5A36"/>
+<circle cx="200" cy="96" r="34" fill="#F7B733"/>
+<circle cx="310" cy="96" r="34" fill="#2E9E5B"/>
+<text x="90" y="104" text-anchor="middle" font-size="30" font-family="sans-serif" fill="#fff">1</text>
+<text x="200" y="104" text-anchor="middle" font-size="30" font-family="sans-serif" fill="#fff">2</text>
+<text x="310" y="104" text-anchor="middle" font-size="30" font-family="sans-serif" fill="#fff">3</text>
+<text x="90" y="160" text-anchor="middle" font-size="18" font-family="sans-serif" fill="#2B2A28">拖拽瞄准</text>
+<text x="200" y="160" text-anchor="middle" font-size="18" font-family="sans-serif" fill="#2B2A28">松开发射</text>
+<text x="310" y="160" text-anchor="middle" font-size="18" font-family="sans-serif" fill="#2B2A28">摧毁目标</text>
+<text x="200" y="216" text-anchor="middle" font-size="22" font-family="sans-serif" fill="#2B2A28">三步上手，即点即玩</text>
+
+</svg>

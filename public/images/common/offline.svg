@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 260" width="400" height="260">
+
+<rect width="400" height="260" fill="#F6EFE3"/>
+<g stroke="#A8A29A" stroke-width="8" stroke-linecap="round" fill="none">
+<path d="M120 150 a50 50 0 0 1 44 -30"/>
+<path d="M140 130 a82 82 0 0 1 120 0"/>
+<path d="M120 150 h160"/>
+<line x1="120" y1="80" x2="280" y2="180"/>
+</g>
+<text x="200" y="218" text-anchor="middle" font-size="22" font-family="sans-serif" fill="#2B2A28">网络开小差了</text>
+<text x="200" y="248" text-anchor="middle" font-size="15" font-family="sans-serif" fill="#6E6A62">检查网络后点重试</text>
+
+</svg>

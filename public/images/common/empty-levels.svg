@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 260" width="400" height="260">
+
+<rect width="400" height="260" fill="#F6EFE3"/>
+<rect x="150" y="70" width="100" height="70" rx="12" fill="#FF5A36"/>
+<circle cx="200" cy="105" r="10" fill="#F6EFE3"/>
+<rect x="194" y="105" width="12" height="26" fill="#F6EFE3"/>
+<path d="M176 166 L224 166" stroke="#A8A29A" stroke-width="12" stroke-linecap="round"/>
+<text x="200" y="205" text-anchor="middle" font-size="22" font-family="sans-serif" fill="#2B2A28">下一关尚未解锁</text>
+<text x="200" y="238" text-anchor="middle" font-size="15" font-family="sans-serif" fill="#6E6A62">先通关上一关，再回来挑战</text>
+
+</svg>
