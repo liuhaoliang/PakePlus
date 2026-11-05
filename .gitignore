@@ -7,12 +7,18 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Dependencies
 node_modules
-dist-ssr
-*.local
-stats.html
-auto-imports.d.ts
-components.d.ts
+
+# Next.js build output
+.next
+out
+*.tsbuildinfo
+
+# Env (local only)
+.env
+.env.local
+.env.*.local
 
 # Editor directories and files
 .vscode/*
@@ -24,34 +30,20 @@ components.d.ts
 *.njsproj
 *.sln
 *.sw?
-dist
 
-# IDE
-*.iml
-.gradle
-/local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
-.DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
-local.properties
-.src/assets/*.js
+# misc
+dist
+dist-ssr
+*.local
+stats.html
+auto-imports.d.ts
+components.d.ts
 
 # vitepress
 docs/.vitepress/dist
 docs/.vitepress/cache
 docs/.vitepress/temp
-docs/.vitepress/cache
-docs/.vitepress/temp
-docs/.vitepress/cache
-docs/.vitepress/temp
 
-# tauri
+# tauri (遗留壳工程，保留忽略)
 src-tauri/target
+target

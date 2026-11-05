@@ -1,0 +1,316 @@
+/* 《弹弓小队》全局样式 —— 松木工坊视觉（antd-mobile CSS 变量 + 自研组件类） */
+:root {
+  /* antd-mobile 主题变量（设计定稿 §5.2） */
+  --adm-color-primary: #ff5a36;
+  --adm-color-success: #2e9e5b;
+  --adm-color-warning: #f7b733;
+  --adm-color-danger: #e5484d;
+  --adm-color-text: #2b2a28;
+  --adm-color-text-secondary: #6e6a62;
+  --adm-color-weak: #a8a29a;
+  --adm-color-border: #e3dbcb;
+  --adm-color-background: #f6efe3;
+
+  /* 自研令牌 */
+  --ink: #2b2a28;
+  --ink-2: #6e6a62;
+  --bg: #f6efe3;
+  --card: #fffcf5;
+  --border: #e3dbcb;
+  --primary: #ff5a36;
+  --success: #2e9e5b;
+  --warning: #f7b733;
+  --danger: #e5484d;
+  --radius: 16px;
+  --shadow: 0 2px 10px rgba(43, 42, 40, 0.06);
+}
+
+* {
+  box-sizing: border-box;
+}
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "HarmonyOS Sans SC", "MiSans", "Helvetica Neue", Arial,
+    sans-serif;
+  font-size: 15px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+a {
+  color: var(--primary);
+  text-decoration: none;
+}
+img {
+  max-width: 100%;
+  display: block;
+}
+button {
+  font-family: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  padding: 0;
+}
+
+/* 桌面收敛：内容是移动优先，桌面居中窄列 */
+.shell {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 0 16px calc(env(safe-area-inset-bottom, 0px) + 32px);
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: calc(env(safe-area-inset-top, 0px) + 12px) 8px 8px;
+  background: linear-gradient(var(--bg) 82%, rgba(246, 239, 227, 0));
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 800;
+  font-size: 18px;
+  color: var(--ink);
+}
+.brand img {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+}
+
+.h1 {
+  font-size: 30px;
+  line-height: 1.2;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+  margin: 8px 0;
+}
+.h2 {
+  font-size: 20px;
+  font-weight: 800;
+  margin: 20px 0 8px;
+}
+.muted {
+  color: var(--ink-2);
+  font-size: 14px;
+}
+.section {
+  margin: 20px 0;
+}
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 16px;
+}
+.row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.between {
+  justify-content: space-between;
+}
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+@media (min-width: 640px) {
+  .grid-2 {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 46px;
+  padding: 0 20px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.08s ease, opacity 0.2s ease, background 0.2s ease;
+  color: var(--ink);
+  background: #fff;
+}
+.btn:active {
+  transform: scale(0.97);
+}
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.btn-primary {
+  background: var(--primary);
+  color: #fff;
+}
+.btn-ghost {
+  background: transparent;
+  border-color: var(--border);
+  color: var(--ink);
+}
+.btn-sm {
+  min-height: 40px;
+  padding: 0 14px;
+  font-size: 14px;
+}
+.btn-block {
+  width: 100%;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: #fff;
+  border: 1px solid var(--border);
+  font-size: 13px;
+  cursor: pointer;
+  min-height: 34px;
+}
+.chip-on {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+
+.stars {
+  display: inline-flex;
+  gap: 2px;
+  color: var(--warning);
+  font-size: 18px;
+  line-height: 1;
+}
+.stars .dim {
+  color: #ded6c8;
+}
+
+.progress-track {
+  height: 10px;
+  border-radius: 999px;
+  background: #eae2d2;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--primary);
+  transition: width 0.3s ease;
+}
+
+.tagline-hero {
+  font-size: 26px;
+  font-weight: 900;
+  line-height: 1.25;
+  margin: 8px 0 4px;
+}
+
+/* 关卡缩略图 */
+.thumb {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: 12px;
+  background: #eae2d2;
+}
+.grid-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* 榜单行 */
+.rank-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 4px;
+  border-bottom: 1px dashed var(--border);
+}
+.rank-row:last-child {
+  border-bottom: 0;
+}
+.rank-no {
+  width: 30px;
+  font-weight: 800;
+  color: var(--ink-2);
+  text-align: center;
+}
+.rank-no.gold { color: #d4a017; }
+.rank-no.silver { color: #8b8d94; }
+.rank-no.bronze { color: #b06a3c; }
+.rank-avatar {
+  width: 36px;
+  height: 36px;
+  flex: none;
+}
+.rank-name {
+  flex: 1;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+/* 结果页分享动作按钮组 */
+.cta-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+/* 游戏画布 */
+.game-canvas {
+  width: 100%;
+  display: block;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: #cfe4f3;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.play-hud {
+  margin: 8px 0 10px;
+}
+.link-btn {
+  background: none;
+  border: 0;
+  color: var(--primary);
+  font-size: 15px;
+  font-weight: 700;
+  padding: 10px 4px;
+  cursor: pointer;
+}
+
+/* a11y：焦点可见 */
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
+}

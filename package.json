@@ -1,24 +1,28 @@
 {
-    "name": "pakeplus",
-    "private": true,
-    "version": "1.0.2",
-    "type": "module",
-    "scripts": {
-        "tauri:dev": "tauri dev",
-        "tauri:build": "tauri build",
-        "tauri:debug": "tauri build --debug",
-        "tauri": "tauri",
-        "icon": "tauri icon",
-        "worker": "node ./scripts/ppworker.cjs",
-        "restore": "git restore .",
-        "update tauri": "cd src-tauri && cargo update",
-        "rm:cache": "rm -f ~/.cargo/.package-cache"
-    },
-    "devDependencies": {
-        "@tauri-apps/cli": "^2",
-        "@types/node": "^22.5.4",
-        "png2icons": "^2.0.1",
-        "sharp": "^0.33.5",
-        "fs-extra": "^11.3.0"
-    }
+  "name": "slingshot-squad",
+  "version": "0.1.0",
+  "private": true,
+  "description": "《弹弓小队》— 支付宝第三方纯 H5 弹弓物理小游戏（原创 IP，不发 Rovio 内容）",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "antd-mobile": "5.43.0",
+    "matter-js": "0.20.0",
+    "next": "15.2.4",
+    "react": "19.0.0",
+    "react-dom": "19.0.0"
+  },
+  "devDependencies": {
+    "@types/matter-js": "0.20.2",
+    "@types/node": "^22.13.10",
+    "@types/react": "^19.0.12",
+    "@types/react-dom": "^19.0.4",
+    "eslint": "^8.57.1",
+    "eslint-config-next": "15.2.4",
+    "typescript": "^5.7.3"
+  }
 }
