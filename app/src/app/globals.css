@@ -1,0 +1,125 @@
+:root {
+  --brand-orange: #ff8a00;
+  --brand-sky: #4fb4f0;
+  --brand-green: #64c24e;
+  --brand-yellow: #ffd23e;
+  --brand-cream: #fff6e5;
+  --brand-wood: #8a5a3b;
+  --brand-danger: #f05b5b;
+  --brand-ink: #2b2320;
+  --brand-weak: #8c7a6b;
+  --radius-s: 8px;
+  --radius-m: 12px;
+  --radius-l: 16px;
+  --font-ui: -apple-system, "PingFang SC", "HarmonyOS Sans SC", "MiSans", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-ui);
+  color: var(--brand-ink);
+  background: var(--brand-cream);
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  font-family: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--brand-orange);
+  outline-offset: 2px;
+}
+
+main {
+  display: block;
+}
+
+/* 移动优先：内容列居中，桌面限制宽度 */
+.page {
+  max-width: 560px;
+  margin: 0 auto;
+  padding: calc(env(safe-area-inset-top) + 16px) 16px calc(env(safe-area-inset-bottom) + 24px);
+}
+
+h1,
+h2,
+h3 {
+  margin: 0 0 8px;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+}
+
+.section {
+  margin: 24px 0;
+}
+
+.card {
+  background: #fff;
+  border-radius: var(--radius-l);
+  padding: 16px;
+  box-shadow: 0 4px 12px rgba(43, 35, 32, 0.08);
+  border: 1px solid rgba(138, 90, 59, 0.08);
+}
+
+.brand-gradient {
+  background: linear-gradient(180deg, #7ec8ff 0%, #e8f7ff 60%, #fff6e5 100%);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 10px 22px;
+  border-radius: 999px;
+  border: 0;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+.btn:active {
+  transform: scale(0.97);
+}
+
+.btn-primary {
+  background: var(--brand-orange);
+  color: #fff;
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--brand-orange);
+  border: 1.5px solid var(--brand-orange);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
