@@ -17,7 +17,7 @@ export const metadata: Metadata = {
     url: "/leaderboard",
     title: "排行榜 - 弹弹鸟：鸟蛋保卫战",
     description: "总分榜 Top 22,看看谁是本周弹王。",
-    images: [{ url: "/images/ranking/badge-gold.svg", width: 40, height: 40, alt: "排行榜" }],
+    images: [{ url: "/images/chapters/ch-hill.webp", width: 1200, height: 400, alt: "弹弹鸟排行榜" }],
   },
 };
 

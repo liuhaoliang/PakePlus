@@ -17,6 +17,8 @@ const SETTLE_SPEED = 42;
 const BLOCK_HP: Record<string, number> = { glass: 1, wood: 1, stone: 2 };
 const BLOCK_BREAK: Record<string, number> = { glass: 150, wood: 260, stone: 430 };
 const FALL_DAMAGE_SPEED = 320;
+// 猪脚与承重面允许的嵌入/悬浮容差（猪初始可略高于块顶面）
+const SUPPORT_TOL = 18;
 
 export type BirdPhase = "ready" | "dragging" | "flying" | "done";
 
@@ -195,7 +197,7 @@ export class GameEngine {
     this.onEvent({ kind: "bird-launched", index: this.currentBirdIndex });
   }
 
-  /** 黄鸟：飞行途中二段加速；蓝鸟：重型冲击（重置为高伤害标记由碰撞逻辑处理） */
+  /** 黄鸟：飞行途中二段加速；蓝鸟：俯冲增速（×1.35，冲击更强，分裂能力预留） */
   activateAbility(): void {
     const b = this.currentBird;
     if (!b || b.phase !== "flying") return;
@@ -261,7 +263,7 @@ export class GameEngine {
         p.falling = false;
         p.vy = 0;
       } else {
-        const top = this.blockTopUnder(p.x);
+        const top = this.blockTopUnder(p.x, p.y + p.r);
         if (top !== null && p.y + p.r >= top - 1 && p.y + p.r <= top + 20) {
           p.y = top - p.r;
           if (p.vy > FALL_DAMAGE_SPEED) this.damagePig(p, 1);
@@ -299,18 +301,23 @@ export class GameEngine {
 
   private pigSupported(p: PigBody): boolean {
     if (p.y + p.r >= this.groundY - 0.5) return true;
-    const top = this.blockTopUnder(p.x);
-    return top !== null && Math.abs(p.y + p.r - top) < 18;
+    const top = this.blockTopUnder(p.x, p.y + p.r);
+    return top !== null && Math.abs(p.y + p.r - top) < SUPPORT_TOL;
   }
 
-  /** 返回猪脚下最近的存活块顶面 y（无则为 null） */
-  private blockTopUnder(x: number): number | null {
+  /**
+   * 返回猪脚下最近的存活块顶面 y（无则为 null）。
+   * 只统计「不高于猪脚（含容差）」的承重面，并取其中最高的一面：
+   * 顶梁/高块的顶面位于猪脚上方，不构成支撑，必须排除（B2 修复）。
+   */
+  private blockTopUnder(x: number, feetY: number): number | null {
     let best: number | null = null;
     for (const blk of this.blocks) {
       if (!blk.alive) continue;
       const hw = blk.w / 2 + 4;
       if (x < blk.x - hw || x > blk.x + hw) continue;
       const top = blk.y - blk.h / 2;
+      if (top < feetY - SUPPORT_TOL) continue;
       if (best === null || top < best) best = top;
     }
     return best;

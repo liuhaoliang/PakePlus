@@ -18,7 +18,12 @@ export const metadata: Metadata = {
     description: SITE_DESCRIPTION,
     images: [{ url: "/images/home/hero.webp", width: 1200, height: 630, alt: SITE_NAME }],
   },
-  twitter: { card: "summary_large_image" },
+  twitter: {
+    card: "summary_large_image",
+    title: `${SITE_NAME} —— 拉满弹弓，守护最后一颗蛋`,
+    description: SITE_DESCRIPTION,
+    images: [{ url: "/images/home/hero.webp", alt: SITE_NAME }],
+  },
   robots: { index: true, follow: true },
 };
 

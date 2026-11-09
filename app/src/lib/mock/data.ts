@@ -13,7 +13,7 @@ import type {
   PigBody,
   PigTier,
 } from "../types";
-import { CHAPTERS } from "../constants";
+import { BIRD_BONUS, BLOCK_SCORE, CHAPTERS, PIG_SCORE } from "../constants";
 
 // ---------- 确定性伪随机（mulberry32） ----------
 function mulberry32(seed: number): () => number {
@@ -92,7 +92,7 @@ function twinTower(rng: () => number, material: BlockMaterial, ruler: PigTier): 
   return { blocks, pigs };
 }
 
-/** 桥：一块横板搭在两摞块上，猪在桥下 */
+/** 桥：一块横板搭在两摞块上，猪站在桥下地面上 */
 function bridge(rng: () => number, material: BlockMaterial, pigR: number): Piece {
   const g = WORLD.groundY;
   const blocks: BlockBody[] = [];
@@ -103,7 +103,7 @@ function bridge(rng: () => number, material: BlockMaterial, pigR: number): Piece
   placeBlock(blocks, cx - span / 2, g - pierH / 2, 20, pierH, material === "glass" ? "wood" : material);
   placeBlock(blocks, cx + span / 2, g - pierH / 2, 20, pierH, material === "glass" ? "wood" : material);
   placeBlock(blocks, cx, g - pierH - 8, span + 20, 16, material);
-  pigs.push({ x: cx, y: g - 22 - pigR, r: pigR, hp: 1, tier: "normal" });
+  pigs.push({ x: cx, y: g - pigR, r: pigR, hp: 1, tier: "normal" });
   return { blocks, pigs };
 }
 
@@ -116,8 +116,9 @@ function glassTower(rng: () => number): Piece {
   placeBlock(blocks, cx, g - 9, 120, 18, "wood");
   placeBlock(blocks, cx - 42, g - 30, 86, 42, "glass");
   placeBlock(blocks, cx + 30, g - 60, 60, 44, "glass");
-  pigs.push({ x: cx - 42, y: g - 63 + 12, r: 20, hp: 1, tier: "normal" });
-  pigs.push({ x: cx + 30, y: g - 93 + 30, r: 22, hp: 1, tier: "normal" });
+  // 猪脚落在玻璃块顶面上：打碎玻璃 → 失去支撑 → 坠落（B2 修复配套的初始落位）
+  pigs.push({ x: cx - 42, y: g - 30 - 42 / 2 - 20, r: 20, hp: 1, tier: "normal" });
+  pigs.push({ x: cx + 30, y: g - 60 - 44 / 2 - 22, r: 22, hp: 1, tier: "normal" });
   return { blocks, pigs };
 }
 
@@ -193,6 +194,28 @@ function tipFor(chapter: 1 | 2 | 3, id: number): string {
   return a[id % a.length]!;
 }
 
+/**
+ * 星级阈值推导（B1 修复）：以关卡实际内容（块/猪/鸟数）计算，不再使用全局公式。
+ * 单关理论最高分 = 全部结构块分值 + 全部猪分值 +（鸟数-1）× 剩鸟奖励（至少要用 1 只鸟）。
+ * - 1★（targetScore）：击倒全部猪即达标，通关必得 ≥1 星（贴合弹弓类玩法惯例）；
+ * - 2★：全部猪 + 50% 结构分 + 35% 剩鸟奖励上限；
+ * - 3★：全部猪 + 80% 结构分 + 65% 剩鸟奖励上限（严格低于理论满分，保证存在可行解）。
+ */
+function scoreTargets(layout: LevelLayout, birdCount: number): { targetScore: number; starScore: [number, number] } {
+  const pigsScore = layout.pigs.reduce((sum, p) => sum + (PIG_SCORE[p.tier] ?? 1000), 0);
+  const blocksScore = layout.blocks.reduce((sum, b) => sum + (BLOCK_SCORE[b.material] ?? 300), 0);
+  const maxBonus = Math.max(birdCount - 1, 0) * BIRD_BONUS;
+  const round100 = (v: number) => Math.round(v / 100) * 100;
+  return {
+    // Math.min 兜底：保证阈值不超过「仅击倒全部猪」的分数，通关 ⇒ ≥1 星恒成立
+    targetScore: Math.min(round100(pigsScore * 0.95), pigsScore),
+    starScore: [
+      round100(pigsScore + blocksScore * 0.5 + maxBonus * 0.35),
+      round100(pigsScore + blocksScore * 0.8 + maxBonus * 0.65),
+    ],
+  };
+}
+
 export const LEVELS: Level[] = (function buildLevels(): Level[] {
   const out: Level[] = [];
   for (let id = 1; id <= 60; id++) {
@@ -201,11 +224,9 @@ export const LEVELS: Level[] = (function buildLevels(): Level[] {
     const pos = ((id - 1) % 20) + 1;
     const rng = mulberry32(id * 2654435761);
     const difficulty = difficultyFor(pos);
-    const targetScore = 4000 + id * 160 + difficulty * 1000;
-    const starScore: [number, number] = [
-      Math.round((targetScore * 1.6) / 100) * 100,
-      Math.round((targetScore * 2.4) / 100) * 100,
-    ];
+    const availableBirds = [...birdsFor(id, chapter)];
+    const layout = buildLayout(id, chapter, rng);
+    const { targetScore, starScore } = scoreTargets(layout, availableBirds.length);
     const name = NAMES[chapter - 1]![pos - 1] ?? `第 ${id} 关`;
     out.push({
       id,
@@ -216,10 +237,10 @@ export const LEVELS: Level[] = (function buildLevels(): Level[] {
       difficulty,
       targetScore,
       starScore,
-      availableBirds: [...birdsFor(id, chapter)],
+      availableBirds,
       tip: tipFor(chapter, id),
       unlockRule: id === 1 ? "none" : id - 1,
-      layout: buildLayout(id, chapter, rng),
+      layout,
     });
   }
   return out;
@@ -311,11 +332,11 @@ export const GUIDES: GuideArticle[] = [
   {
     slug: "birds",
     title: "三种小鸟怎么用",
-    summary: "红鸟稳、黄鸟快、蓝鸟重——各有妙用。",
+    summary: "红鸟稳、黄鸟快、蓝鸟猛——各有妙用。",
     sections: [
       { heading: "小红（标准）", body: "均衡的初始选择，适合拆木塔与石块。" },
       { heading: "小黄（加速）", body: "飞行途中再点一下屏幕，会向前加速冲刺，适合击穿玻璃层。" },
-      { heading: "小蓝（重型，预留）", body: "更重、冲击更大，适合后期厚重的石堡；分裂能力本期预留。" },
+      { heading: "小蓝（冲刺）", body: "身板更大，飞行途中再点一下会俯冲增速、冲击更强，适合啃后期厚重的石堡；分裂能力本期预留。" },
     ],
   },
   {
@@ -331,7 +352,7 @@ export const GUIDES: GuideArticle[] = [
 
 export const FAQ: FaqItem[] = [
   { question: "怎么拿三星？", answer: "三星 = 少用鸟、精准落点、借力倒塌。剩余小鸟每只 +1000 分，详见「三星通关通用法则」。" },
-  { question: "黄鸟和蓝鸟怎么用？", answer: "黄鸟飞行途中再点一下会加速；蓝鸟更重、冲击力更大（分裂能力本期预留）。" },
+  { question: "黄鸟和蓝鸟怎么用？", answer: "黄鸟飞行途中再点一下会加速冲刺；蓝鸟再点一下会俯冲增速、冲击更强（分裂能力本期预留）。" },
   { question: "断网能玩吗？", answer: "能。游戏核心是单机 Canvas 物理，不依赖网络；只有榜单/攻略等周边页面需要联网。" },
   { question: "怎么登录同步？", answer: "本期以本地存档为主，支付宝一键登录（OAuth）为预留能力，上线后用于跨端同步进度与上榜。" },
   { question: "收费吗？", answer: "免费。复活/道具等内购为预留能力，本期点击会提示「即将上线」。" },

@@ -3,7 +3,6 @@ import Link from "next/link";
 import Image from "next/image";
 import { JsonLd } from "@/components/JsonLd";
 import { AvatarBadge } from "@/components/AvatarBadge";
-import { Stars } from "@/components/Stars";
 import { ResumeCta } from "@/components/ResumeCta.client";
 import { ShareFavActions } from "@/components/ShareFav.client";
 import { MyProgress } from "@/components/MyProgress.client";
@@ -94,7 +93,7 @@ export default function HomePage() {
               />
               <div style={{ fontWeight: 700, marginTop: 8, fontSize: 14 }}>{lv.displayName}</div>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 4 }}>
-                <Stars count={2} size={14} />
+                <span style={{ fontSize: 12, color: "var(--brand-weak)" }}>3★ 目标</span>
                 <span style={{ fontSize: 12, color: "var(--brand-weak)" }}>{DIFFICULTY_LABEL[lv.difficulty]}</span>
               </div>
             </Link>

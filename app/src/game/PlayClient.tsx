@@ -211,7 +211,9 @@ export function PlayClient({ level, nextId }: { level: Level; nextId: number }) 
     };
   }, [level]);
 
-  pausedRef.current = paused;
+  useEffect(() => {
+    pausedRef.current = paused;
+  }, [paused]);
 
   const toWorld = useCallback((e: React.PointerEvent) => {
     const canvas = canvasRef.current;
@@ -285,7 +287,7 @@ export function PlayClient({ level, nextId }: { level: Level; nextId: number }) 
           onPointerCancel={onUp}
           onPointerLeave={onUp}
         />
-        {abilityHint && !result && <div style={{ position: "absolute", bottom: 8, left: 0, right: 0, textAlign: "center", fontSize: 12, color: "#fff", textShadow: "0 1px 2px rgba(0,0,0,.4)" }}>黄鸟飞行中再点一下可加速 · 蓝鸟更重</div>}
+        {abilityHint && !result && <div style={{ position: "absolute", bottom: 8, left: 0, right: 0, textAlign: "center", fontSize: 12, color: "#fff", textShadow: "0 1px 2px rgba(0,0,0,.4)" }}>飞行中再点一下：黄鸟加速冲刺 · 蓝鸟俯冲增速</div>}
       </div>
 
       <p style={{ padding: "8px 16px 0", fontSize: 13, color: "var(--brand-weak)", margin: 0 }}>💡 {level.tip}</p>
