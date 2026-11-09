@@ -226,7 +226,9 @@ export class GameEngine {
       steps += 1;
     }
     this.updateParticles(dtMs / 1000);
-    if (steps < 6) this.acc = 0;
+    // 仅过载（单帧 6 步仍未消化完）时丢弃积压，防死亡螺旋；正常帧保留不足一步的余量继续累积，
+    // 否则 dt < 1000/60 的帧（>60Hz 高刷屏）时间被整帧丢弃，物理零推进（B3 修复）。
+    if (steps >= 6) this.acc = 0;
   }
 
   private step(dt: number): void {

@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { Tabs, Toast } from "antd-mobile";
 import { loadSave, type SaveState } from "@/lib/storage";
 import { CHAPTERS, DIFFICULTY_LABEL } from "@/lib/constants";
+import { Stars } from "@/components/Stars";
 import type { Level } from "@/lib/types";
 
 /** 关卡地图：3 章 Tabs × 60 关网格。SSR 期默认全部可点（供 SEO 抓取 60 条链接），hydrate 后按存档套锁/星级。 */
@@ -21,7 +22,7 @@ export function LevelMap({ levels }: { levels: Level[] }) {
     return (save.levelStars[String(lv.unlockRule)] ?? 0) > 0;
   };
 
-  const starsOf = (lvId: number): number => save?.levelStars[String(lvId)] ?? 0;
+  const starsOf = (lvId: number): 0 | 1 | 2 | 3 => save?.levelStars[String(lvId)] ?? 0;
 
   return (
     <Tabs defaultActiveKey="1">
@@ -61,7 +62,8 @@ export function LevelMap({ levels }: { levels: Level[] }) {
                       {lv.id}
                     </div>
                     <div style={{ fontSize: 11, color: open ? "var(--brand-ink)" : "#B7A98F", lineHeight: 1.1 }}>
-                      {open ? (stars > 0 ? "★★☆".slice(0, stars * 2) : lv.name) : "🔒"}
+                      {/* 金星数 = 已得星数（I2 修复：原按星数切片星字符的写法会 1★ 显示两星、3★ 与 2★ 相同） */}
+                      {open ? (stars > 0 ? <Stars count={stars} size={11} /> : lv.name) : "🔒"}
                     </div>
                     {!open && <span className="sr-only">需要先通关第 {String(lv.unlockRule)} 关</span>}
                   </div>
