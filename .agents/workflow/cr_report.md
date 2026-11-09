@@ -1,9 +1,10 @@
-# 代码评审报告（cr_report）—— 弹弹鸟：鸟蛋保卫战
+# 代码评审报告（cr_report · 第 2 轮）—— 弹弹鸟：鸟蛋保卫战
 
-> 节点：代码评审（verify）
+> 节点：代码评审（verify，第 2 轮复核——上一轮评审的 B1/B2/I1 修复已合入 db97140 之后）
 > 采用技能：`code-review-skill`
-> 审阅对象：`app/`（React + TypeScript + Next.js App Router + antd-mobile，独立子目录，41 个 TS/TSX 源文件 + 9 个 Route Handler）
-> 输入：`.agents/workflow/requirements.md`（G1）、`.agents/workflow/design.md`（G2）、`.agents/workflow/coding_summary.md`（G3）、`.agents/workflow/assets_manifest.md`
+> 审阅对象：`app/`（React 18 + TypeScript + Next.js 14 App Router + antd-mobile，独立子目录，39 个 TS/TSX 源文件 + globals.css + 配置）
+> 输入：`.agents/workflow/requirements.md`（G1）、`.agents/workflow/design.md`（G2）、`.agents/workflow/assets_manifest.md`、`${spec_dir}/coding_summary.md`（**不存在**，以 `.agents/workflow/coding_summary.md` 副本 + `${spec_dir}/fix_summary.md` 替代）
+> 评审基准：当前工作区代码（`git status` 干净，与 db97140 一致）
 
 ---
 
@@ -11,11 +12,12 @@
 
 **决策：🔴 Request Changes（需修改后合入）**
 
-- **阻断项（blocking）：2 个**
-- 重要项（important）：1 个
-- 轻微项（nit）+ 建议（suggestion）：若干
+- **阻断项（blocking）：1 个（本轮新发现，非上轮回归）**
+- 重要项（important）：1 个（本轮新发现）
+- 轻微项（nit）/观察：6 项
+- **上轮阻断项 B1（星级阈值失配）、B2（猪支撑面判定）、重要项 I1（桥下猪悬空）全部核实修复有效**，nit 6 项修复亦逐一落地。
 
-整体完成度高：工程结构清晰、类型安全（strict + noUncheckedIndexedAccess 0 错误）、SEO/容器能力边界/护栏脚本均达标、mock 数据真实贴近业务。但**核心玩法闭环存在两处功能性缺陷**：① 星级阈值全局失配导致星级结算功能在绝大多数关卡不可达成；② 猪的「支撑/坍塌」判定取错支撑面，导致架空的猪在首次结算/破块后整体坠落到地面，破坏「结构摧毁/借力倒塌」这一 Must 玩法。
+本轮发现的核心问题：**物理引擎 `update()` 的帧时间累加器重置条件写反**——`if (steps < 6) this.acc = 0` 在「未触及步数上限」的每一帧都把不足一个物理步的剩余时间清零。实测 `update(dt ≤ 16.666ms)` 连续 600 次物理零推进：**刷新率高于 60Hz 的设备（120Hz ProMotion iPhone / 90~144Hz Android，支付宝 WebView 目标受众的主力机型）游戏完全冻结**；60Hz 下因 rAF 时间戳抖动/整数量化（16/17ms 交替）约半数帧被丢弃，表现为卡顿与慢动作。这是 Must 级核心玩法在真实设备上的功能性失效，必须修复。
 
 ---
 
@@ -23,93 +25,174 @@
 
 | 维度 | 范围 | 结论 |
 |---|---|---|
-| 类型/编译 | `app/` 全部 41 个 TS/TSX + 9 个 Route Handler | `tsc --noEmit` rc=0，0 错误 ✅ |
-| 项目护栏 | `scripts/check-project.mjs`（禁用 API 遗址） | rc=0 ✅ |
-| SEO 护栏 | `scripts/check-seo.mjs`（canonical/og 一致、sitemap/robots、无 cloaking） | rc=0 ✅ |
-| 发布门 | `scripts/check-build.mjs`（env/密钥边界） | rc=0 ✅ |
+| 逐文件阅读 | `app/src/**` 全部 39 个 TS/TSX（9 Route Handler + 10 页面/路由 + 11 组件 + container + game×2 + lib×6）+ globals.css + next.config.mjs/.eslintrc.json | 本轮全量通读 ✅ |
+| 类型检查 | `tsc --noEmit`（strict + noUncheckedIndexedAccess） | rc=0，0 错误 ✅ |
+| 项目护栏 | `scripts/check-project.mjs` | rc=0 ✅ |
+| SEO 护栏 | `scripts/check-seo.mjs` | rc=0 ✅ |
+| 发布门 | `scripts/check-build.mjs` | rc=0 ✅ |
 | 能力矩阵 | `scripts/check-env.mjs` | rc=0 ✅ |
-| 核心逻辑 | 物理引擎 `game/engine.ts`、`mock/data.ts` 计分/布局 | 独立核算脚本见 §4 |
+| Lint | `next lint` | rc=0（No ESLint warnings or errors）✅ |
+| 行为复验 | 独立脚本：TypeScript 转译仓库真实 `constants.ts`/`mock/data.ts`/`game/engine.ts` 为 CJS 后执行 60 关全量断言 + 引擎场景用例 | 见 §3/§4 证据 |
+| 生产构建 | 本轮未重跑；引用 fix_summary 记录（`next build` rc=0，60 个 `/level/[id]` SSG 页产出），本轮代码与之零差异（git status 干净） | 引用值 ⚠️ |
 
-> 审阅方式：逐文件阅读 `app/src/**`，重点核对物理引擎、关卡布局与计分、SEO/容器边界；对「星级可达性」用独立脚本复算 60 关理论最高分与阈值差，对支撑逻辑做了逐行推演。视觉验证未执行（当前路由无可视化能力），以代码级推演 + 数值核算为准。
+> 审阅方式：逐文件阅读 + 上轮修复点独立复算（不采信 fix_summary 自述，用转译后的真实源码重跑断言）。**视觉验证未执行**（当前路由无可视化能力）；引擎行为结论均来自确定性脚本实测，UI 呈现类问题（如 §5 I2）以代码推演 + JS 语义实证为准。
 
 ---
 
-## 3. 问题清单（按严重度）
+## 3. 上轮修复复核（全部通过）
 
-### 🔴 [blocking] B1 —— 星级阈值全局失配，星级结算对绝大多数关卡不可达成
+### 🔴→✅ B1 星级阈值（`app/src/lib/mock/data.ts:204-217` `scoreTargets()`）
 
-- 位置：`app/src/lib/mock/data.ts:204-208`（targetScore / starScore 公式）、`app/src/lib/constants.ts:30-32`（分值常量）、`app/src/game/engine.ts:407-409`（剩余鸟奖励）、`:368-377`（拆块计分）、`:379-393`（猪计分）。
-- 现象：`targetScore = 4000 + id*160 + difficulty*1000`，二/三星阈值再 ×1.6 / ×2.4。而单关可得分数上限 = 全部存活块分值 + 全部猪分值 + (可用鸟数-1)×1000。
-- 独立核算结果（对 60 关逐一取理论最高分，即「击毁全部块 + 击倒全部猪 + 仅用 1 只鸟」的上界）：
-  - **1 星（targetScore）不可达：58 / 60 关**
-  - **2 星不可达：60 / 60 关**
-  - **3 星不可达：60 / 60 关**
-- 具体示例：
-  - 第 1 关：5 个木块（5×300=1500）+ 1 猪（1000）+ 剩余 2 鸟奖励（2000）= 理论最高 **4500**，而 targetScore = **5160**（二星 8300 / 三星 12400）。即使完美通关也只能 **0 星**。
-  - 第 2、7 关（双塔 11 块 + 2 猪 + 2 鸟奖励，上界 7300）是仅有的 2 个可达 1 星的关卡，但二星仍不可达。
-- 影响：`结算（星级/分数）` 是 G1 的 **Must** 功能。现状为「过关弹 🎉 但永远 0 星」，星级这一核心目标与分享/留存的激励闭环失效。
-- 建议：以「单关理论最高分」为基准反推阈值（例如 targetScore ≈ 该关块/猪总分 × 系数 + 1~3 鸟奖励），并给全部 60 关做一次达标校验（≥ 可达成 1 星、3 星存在于至少一套可行解）。
+独立复算 60 关（口径：`BLOCK_SCORE{glass:200,wood:300,stone:400}`、`PIG_SCORE{normal:1000,king:1500}`、`BIRD_BONUS=1000`）：
 
-### 🔴 [blocking] B2 —— 猪的支撑/坍塌判定取错支撑面，架空猪在首次结算/破块后整体坠落
+| 断言 | 结果 |
+|---|---|
+| 1★ 不可达（targetScore > 猪分Σ） | **0/60** ✅ |
+| 3★ 超理论上界（starScore[1] ≥ 猪分Σ+块分Σ+奖励上限） | **0/60** ✅（裕量 ≥ 0.2×块分Σ + 0.35×奖励 − 取整 50 > 0，最小块分Σ=700 ⇒ 裕量 ≥ 90） |
+| 阈值非严格递增（targetScore < star2 < star3） | 0/60 ✅ |
+| 仅清空全部猪（得猪分Σ）星级 < 1 | 0/60 ✅（通关必得 ≥1★） |
+| 理论满分星级 ≠ 3 | 0/60 ✅（完美通关必 3★） |
 
-- 位置：`app/src/game/engine.ts:306-317`（`blockTopUnder`）、`:300-304`（`pigSupported`）、`:293-298`（`recomputeFalling`，由 `afterSettle` `:289-291`、`breakBlock` `:375`、`damagePig` `:387` 触发）。
-- 现象：`blockTopUnder` 的意图注释是「返回猪脚下最近的存活块顶面」，但实现取的是**水平重叠块中 top 最小（即最高、最靠近屏幕上方）的那一块**，未过滤「位于猪脚下方的面」：
+### 🔴→✅ B2 猪支撑面判定（`app/src/game/engine.ts:302-324`）
+
+- `blockTopUnder(x, feetY)` 增加 `feetY` 参数并跳过 `top < feetY - SUPPORT_TOL` 的面（顶梁/高块顶面位于猪脚上方，不再误判为支撑），取满足条件的最高面——逻辑正确。
+- **开局支撑 60 关全量断言：无支撑猪所在关卡 = []（空）** ✅（含 I1 的桥下猪、glassTower 玻璃托猪、stoneFort 猪王）。
+- 场景推演（dt=17ms 实测，见 §4 说明）：L1 头顶顶梁/加高块 → 有支撑；拆掉上方两块仍支撑；拆平台（真承重面）→ 坠落 → 落到地面（脚 y=560.0）且存活（落差 22px < 摔伤阈值）✅。L4 打碎左玻璃 → 左猪坠落并落到木平台顶 542 且存活（落差 64px）、右猪不受影响 ✅。
+- 落地检测/`pigSupported` 均已传 `p.y + p.r`，`SUPPORT_TOL=18` 与落地窗口 `top+20` 自洽 ✅。
+
+### 🟡→✅ I1 桥下猪（`data.ts:106`）
+
+`y = g - pigR` 站在桥下地面，被 60 关开局支撑断言覆盖 ✅。
+
+### nit 修复落地核对（6/6）
+
+| 项 | 位置 | 核对结果 |
+|---|---|---|
+| 首页精选卡星级误导 | `page.tsx:96` | 已改「3★ 目标」，`Stars` import 已移除 ✅ |
+| 死代码 api.ts/useInAlipay.ts | 文件已不存在 | `find` 确认删除 ✅ |
+| 蓝鸟文案对齐 | `engine.ts:200`、`data.ts GUIDES/FAQ`、`PlayClient.tsx:290` | 统一为「俯冲增速、冲击更强，分裂预留」✅ |
+| pausedRef 渲染期写入 | `PlayClient.tsx:214-216` | 已移入 `useEffect` ✅ |
+| 榜单 og:image 40×40 | `leaderboard/page.tsx:20` | 已改 `ch-hill.webp`（1200×400）✅ |
+| twitter 元信息补全 | `layout.tsx:21-26` | title/description/images 齐全 ✅ |
+
+---
+
+## 4. 🔴 [blocking] B3 —— 引擎帧累加器重置条件写反：高刷新率设备游戏完全冻结
+
+- **位置**：`app/src/game/engine.ts:219-230`（`update()`），关键行 `engine.ts:229`：
+
   ```ts
-  const top = blk.y - blk.h / 2;
-  if (best === null || top < best) best = top; // 取最小 top ⇐ 顶梁/高块，而非脚下的平台
+  update(dtMs: number): void {
+    if (this.finished) return;
+    let steps = 0;
+    this.acc += Math.min(dtMs, 200);
+    while (this.acc >= 1000 / 60 && steps < 6) {
+      this.step(1 / 60);
+      this.acc -= 1000 / 60;
+      steps += 1;
+    }
+    this.updateParticles(dtMs / 1000);
+    if (steps < 6) this.acc = 0;   // ← 缺陷：条件写反
+  }
   ```
-  `pigSupported` 再以 `Math.abs(p.y + p.r - top) < 18` 判定，于是「猪站在平台上、头顶还有顶梁/高块」的常规塔形结构被误判为「无支撑」。
-- 逐行推演（第 1 关 singleTower）：猪脚 y=538，平台顶 542、顶梁顶 471、上方附加块顶 435。`blockTopUnder` 返回 435 → `|538-435|=103 ≥ 18` → `pigSupported=false` → 首次 `recomputeFalling`（第一只鸟落地/任一破块/击猪触发）后**所有架空猪 `falling=true` 并坠落到 groundY**。
-- 影响：架空猪（singleTower/twinTower/glassTower/bridge，约占多数关卡）在游戏进行中**整体沉到地面**，塔/堡结构形同虚设，「拆支撑→借力倒塌」这一 Must 玩法（G1 功能池「碰撞摧毁 + 重力坍塌」、coding_summary §2.2 声称的能力）实际失效；且与注释声称的行为不符。
-- 建议：`blockTopUnder(x, pig)` 应仅考虑「`blk.y - blk.h/2 >= 猪脚 y - 容差`」且与猪脚高度最接近的存活块顶面（或取 `>=` 猪脚的顶面中的最小值），使支撑判定对应「脚下最近承重面」。
 
-### 🟡 [important] I1 —— `bridge()` 关卡猪初始悬空放置（叠加 B2 后必坠）
+- **机理**：`if (steps < 6) this.acc = 0` 的本意应是「过载（一帧消化不完、触及 6 步上限）时丢弃积压防死亡螺旋」，但实际条件相反——**凡未触及步数上限的帧（即正常帧）都会把不足一个物理步（16.667ms）的剩余时间清零**。于是任何 `dt < 1000/60 = 16.6667ms` 的帧，其时间被整帧丢弃，累加器永远凑不满一个物理步。
+- **调用链**：`PlayClient.tsx:199-206` rAF 主循环 `const dt = now - last; … eng.update(dt)`，dt 即真实帧间隔——无任何补偿路径，物理推进完全依赖该 `update()`。
+- **实证**（转译仓库真实 `engine.ts` 执行，L1 拆承重面使猪进入坠落态后连调 `update(dt)` 600 次）：
 
-- 位置：`app/src/lib/mock/data.ts:106`，`pigs.push({ x: cx, y: g - 22 - pigR, ... })`。
-- 现象：注释称「猪在桥下」，但猪脚为 `g-22≈538`、地面 `g=560`，猪被放在距地面 22px 的空中、脚下没有块支撑（横板在猪上方）。
-- 影响：开局即呈现猪悬空；第一次 `recomputeFalling` 后落到地面（配合 B2 会统一沉底）。属关卡布局初始态错误。
-- 建议：桥下猪按「站在地面上」放置（`y = g - pigR`），或在桥下补一块支撑。
+  | rAF 帧间隔 | 物理推进 | 表现 |
+  |---|---|---|
+  | `dt=8.33ms`（120Hz） | **猪 y=516.0 不动，仍 falling** | **游戏完全冻结**（可拖拽瞄准，松手后鸟永远不飞、永不结算） |
+  | `dt=16ms`（60Hz 时间戳量化到整 ms） | 同上不动 | 帧被整帧丢弃 |
+  | `dt=16.666ms`（< 1000/60） | 同上不动 | 帧被整帧丢弃 |
+  | `dt=16.667ms` | 正常（1 步/帧） | 正常 |
+  | `dt=17ms` | 正常 | 正常 |
+  | `dt=33.3ms`（30FPS） | 1 步/帧（剩余 16.63ms 被丢弃） | **半速慢动作** |
 
-### 🟢 [nit] / 💡 [suggestion]
+- **影响面（对照 G1 §10 非功能要求与目标容器）**：
+  - **>60Hz 设备（120Hz ProMotion iPhone、90/120/144Hz Android 旗舰与大量中端机）＝ 支付宝 WebView 主要受众 → 游戏完全不可玩**。Must 级「弹弓发射核心玩法」在真实设备上失效。
+  - 60Hz 设备：rAF 时间戳抖动或整 ms 量化（Android WebView 常见 16/17ms 交替）导致约半数帧被丢弃 → 有效物理速率降至 ~30 步/秒，卡顿 + 慢动作。
+  - 30FPS 弱机（G1 预算「中端机稳定 ≥ 30FPS」）：恒半速慢动作。
+  - 注意粒子 `updateParticles(dtMs/1000)` 用真实 dt 更新——冻结时爆炸粒子仍在飘，画面「有动画但物理冻结」，更易被误判为「卡了」而非死锁。
+- **为何此前未被发现**：fix_summary 的行为复验脚本以 `update(16.67+)` 级别步长驱动（每帧必有 ≥1 步），恰好落在正常区间；`next build`/lint/tsc 均无法暴露时序问题；两轮均未做真机/浏览器视觉验证。
+- **修复建议（最小改动）**：
 
-1. **首页精选卡硬编码 2 星**（`app/src/app/page.tsx:97` `<Stars count={2} …/>`）：6 张精选卡恒显「★★☆」，与玩家真实进度无关，具误导性。建议改为难度标识或「3★ 目标」文案。
-2. **死代码/未接线**：`app/src/lib/api.ts` 的 5 个 `api*` 函数与 `app/src/hooks/useInAlipay.ts` 全仓无引用（页面直接用 `mock/data`）。`api.ts` 服务端 `BASE = SITE_ORIGIN` 一旦被接到 server 组件会去请求占位域名。建议删除或补齐调用方。
-3. **蓝鸟「重型冲击」未实现**：`engine.ts:207-211` 蓝鸟能力仅把速度 ×1.35，攻略/FAQ 文案称「更重、冲击力更大」，碰撞伤害仍只看速度阈值（`:357`）。与文案不一致，建议对齐或在下沉说明中标注（coding_summary 已声明「预留」，可接受但需文案一致）。
-4. **`pausedRef.current = paused` 写在渲染体**（`app/src/game/PlayClient.tsx:214`）：功能可用但属 ref 写入渲染期的反模式，建议移入 `useEffect`。
-5. **`next.config.mjs:7` `eslint.ignoreDuringBuilds: true`**：构建不跑 lint，风格/潜在错误防线后移，建议至少 CI 单独跑 `next lint`。
-6. **榜单页 og:image 用 40×40 SVG**（`app/src/app/leaderboard/page.tsx:20`）：og:image 推荐 ≥1200×630，40×40 会被多数社交平台拒绝/裁切，建议改用章节封面兜底。
-7. **`layout.tsx` twitter 元信息不完整**（仅 `card`，无 title/description/image）。
-8. **客户端解锁可被直链绕过**：`/play/:id`、`/level/:id` 未在服务端校验 `unlockRule`，输入任意 id 即可直达（对休闲游戏可接受，列为提示）。
-9. **`collideBird` 每步只处理一个块后 `return`**（`engine.ts:348`）：高速下存在轻微隧穿可能（当前最高速 ~13.4px/步 < 鸟半径，风险低），如需严谨可做连续穿透修正。
+  ```ts
+  if (steps >= 6) this.acc = 0; // 仅过载时丢弃积压；正常帧保留不足一步的余量累积
+  ```
+
+  或更稳妥：`this.acc = Math.min(this.acc, 1000 / 60)`（永远最多留一步余量）。
+- **修复验收标准（建议复核节点执行）**：转译后断言——`update(8.33)×2` 至少推进 1 步；`update(16)×4` 至少推进 3 步；`update(33.3)` 每帧 2 步；60 关开局支撑、L1/L4 坍塌链路、结算链路在 `dt=8.33` 下全部复跑通过；`tsc`/`next lint` rc=0。
 
 ---
 
-## 4. 验证记录
+## 5. 🟡 [important] I2 —— 关卡地图星级渲染错误：1★ 显示两星、3★ 与 2★ 无法区分
+
+- **位置**：`app/src/components/LevelMap.client.tsx:64`
+
+  ```tsx
+  {open ? (stars > 0 ? "★★☆".slice(0, stars * 2) : lv.name) : "🔒"}
+  ```
+
+- **实证**（JS 语义，`"★★☆"` 为 3 字符串）：`stars=1 → "★★"`（虚高一颗）；`stars=2 → "★★☆"`（恰巧正确）；`stars=3 → "★★☆"`（**与 2★ 完全相同**）。
+- **影响**：设计 §9 `/levels` 线框明确「已 3 星格显示三颗金星」。当前满星成就（三星评级是 Must 功能、复玩核心激励）在关卡地图上不可见，玩家会误以为未达成而反复重打；1★ 关卡被虚标为 2★。数据层（storage/`levelStars`）、`/me` 页（`"★".repeat(stars)`）、结算弹层均正确，仅此一处渲染错误。
+- **建议**：复用 `Stars` 组件，或 `"★".repeat(stars) + "☆".repeat(3 - stars)`；顺带核对网格内字号 11px 下三字符的可用性。
+
+---
+
+## 6. 🟢 [nit] / 💡 [suggestion] / 📚 [learning]
+
+1. **🐦 无地面碰撞与顶点悬停**（`engine.ts:240-252`）：小鸟与地面无碰撞反弹，高速落地的鸟穿透地面直至 `y > groundY+40` 才结算，且 `done` 鸟仍被绘制（`PlayClient.tsx:426-431`）——视觉上是「嵌进草地半截」。另外垂直向上发射时抛物线顶点速度为 0 < `SETTLE_SPEED`，鸟会在半空顶点直接「结算」消失。均为边缘手感问题，非功能失效。
+2. **L60「下一关」是死按钮**：`nextLevelId(60)=60`（`data.ts:258-260`），通关第 60 关后结算层显示「下一关：第 60 关」，Link 软导航到 `/play/60`，`level` 为模块单例同一对象引用 → `useEffect [level]`（`PlayClient.tsx:212`）不会重跑，引擎停在终局状态，按钮点了没反应（「重试本关」可用 `location.reload` 兜底）。建议 `nextId === level.id` 时隐藏该按钮或改为「再玩一次/回关卡地图」。
+3. **固定 0.45s 结算等待窗与布局耦合**（`engine.ts:249,277-288`）：猪坠落超过 ~91px 需 >0.45s，会在判定胜负时仍在空中（当前布局最大坠落 64px——glassTower 右猪 478→542，落地 0.38s，恰好安全）。布局若加高塔即成隐患，建议改为「所有猪 falling=false 或超时 2s 才结算」。
+4. **~124KB 未引用素材随包发布**：`public/images/{game,empty,ranking,share}` 共 23 个文件在代码中 0 引用（`/play` 用 Canvas 程序化绘制、榜单用 CSS 徽章、og 用章节封面——偏离已在 coding_summary §2.4/§5 文档化）。属可接受的兜底素材，但建议在 README/资产清单标注「未接线」，或后续接入 sprite 渲染时启用。
+5. **文案标点不统一**：`MyRank.client.tsx:24-25`、`ShareFav.client.tsx:29,44` 用半角逗号（「登录后上榜,跨端同步」），全站其余为全角。极轻微。
+6. **`POST /api/orders` 未校验登录态**（`orders/route.ts`）：设计标记「登录态」，当前是返回占位订单的预留接口，可接受；实接 wap.pay 前需补 uid 校验与金额白名单。
+
+📚 复核上轮 3 项「有据暂缓」（eslint.ignoreDuringBuilds / 服务端 unlockRule 校验 / collideBird 单块处理）：暂缓理由依然成立（lint 本轮实跑 rc=0；单机 localStorage 进度无服务端存储；碰撞窗口 44px > 最大步长 30px），维持暂缓，不升级。
+
+---
+
+## 7. 亮点（praise）
+
+- 🎉 **上轮修复质量高**：B1 用内容推导阈值（通关必得星、满分必 3★ 有数学保证）；B2 的 `feetY` 过滤 + 取最近承重面是正确且最小的修法；nit 6 项全部落地且无回归（本轮全量复算通过）。
+- 🎉 引擎纯逻辑无 DOM 依赖，事件回调驱动 UI，可测性好（本轮独立脚本正是受益者）。
+- 🎉 容器边界干净：全仓无 `my.*`/`AlipayJSBridge.call`/`ap.tradePay` 遗址，`isAlipayClient` 仅做 UA/存在性判定，无 cloaking；4 个护栏脚本全绿。
+- 🎉 SEO 结构完整：canonical==og:url 四处一致、sitemap 只含 A 类、B 类双保险（robots + noindex）、JSON-LD 齐全；globals.css 落实了 safe-area/44px 热区/prefers-reduced-motion。
+- 🎉 TypeScript strict + noUncheckedIndexedAccess 零错误，死代码已清除。
+
+---
+
+## 8. 验证记录（本轮实际执行）
 
 | 检查 | 命令 | 结果 |
 |---|---|---|
-| 类型检查 | `node_modules/.bin/tsc --noEmit` | rc=0，0 错误 |
+| 类型检查 | `tsc --noEmit`（app/） | rc=0 ✅ |
+| 能力矩阵 | `node scripts/check-env.mjs .` | rc=0 ✅ |
 | 项目护栏 | `node scripts/check-project.mjs .` | rc=0 ✅ |
 | SEO 护栏 | `node scripts/check-seo.mjs .` | rc=0 ✅ |
-| 发布前门 | `node scripts/check-build.mjs .` | rc=0 ✅ |
-| 能力矩阵 | `node scripts/check-env.mjs .` | rc=0 ✅ |
-| 星级可达性 | 独立核算脚本（复刻 `mock/data.ts` 计分与布局，取理论最高分） | 见 B1 数据 |
+| 发布门 | `node scripts/check-build.mjs .` | rc=0 ✅ |
+| Lint | `next lint` | rc=0 ✅ |
+| B1 星级可达性 | 独立断言（转译真实源码，60 关 × 6 断言） | 全部通过 ✅ |
+| B2 开局支撑 | 独立断言（60 关全部猪） | 全部通过 ✅ |
+| B2 坍塌链路 | L1/L4 场景（dt=17ms 驱动） | 全部通过 ✅ |
+| 结算链路 | 清猪 → win → ≥1★（dt=17ms） | 通过 ✅ |
+| **B3 帧率实证** | `update(dt)` 扫描 {8.33,16,16.666,16.667,17,33.3}ms ×600 | **dt ≤ 16.666ms 物理零推进（阻断证据）** |
+| 视觉验证 | — | **未执行**（当前路由无可视化能力） |
 
-说明：星级可达性为**本次评审独立数值核算**（非仓库脚本），依据 `BLOCK_SCORE/PIG_SCORE/BIRD_BONUS` 与 `buildLayout`/`birdsFor` 的逐字复刻，对 60 关求「击毁全部块 + 击倒全部猪 + 最多剩鸟奖励」的理论上界；理论上界仍低于阈值即可严格证明该星级不可达。
-
----
-
-## 5. 亮点（Praise）
-
-- 容器抽象层边界干净：`container.ts` 明确「第三方纯 H5 不用 AlipayJSBridge 容器 JSAPI」，环境判定只用于分流、无 cloaking；护栏脚本实测通过。
-- SEO 体系完整：A 类页 canonical/og 一致、sitemap 只收 A 类、robots 屏蔽 B 类、JSON-LD 结构化数据齐备且数据源可控（`JsonLd` 注入受控 mock，无外部注入）。
-- 工程健壮性：`strict` + `noUncheckedIndexedAccess` 全量 0 错误；localStorage 读写均有 try/catch 与 SSR 判空；物理引擎纯逻辑与渲染解耦，可测性好。
-- 版权合规意识：全程原创素材、主动规避 Rovio 商标，站内多处标注无关联声明。
+运行环境：`/tmp/node-v20.18.0-linux-x64/bin/node`（v20.18.0）；独立脚本与转译产物均在 `/tmp/crverify/`，未触碰仓库。
 
 ---
 
-## 6. 决策与后续
+## 9. 结论与指标
 
-- **决策：🔴 Request Changes。`review_blocker_count = 2`（B1、B2）。**
-- 建议修复顺序：先修 B2（支撑面判定，物理正确性），再修 B1（阈值重算 + 60 关达标校验），随后处理 I1 与各 nit。
-- 修复后建议复查点：`blockTopUnder`/`pigSupported` 单测化；给 60 关输出一张「理论最高分 vs target/star 阈值」达标表作为回归门槛。
+| 指标 | 值 |
+|---|---|
+| **review_blocker_count** | **1**（B3：engine.ts `update()` 帧累加器重置条件写反，高刷屏游戏冻结） |
+| important | 1（I2：LevelMap 星级渲染错误） |
+| nit/observation | 6 |
+| 上轮阻断项回归 | 0（B1/B2/I1 修复全部核实有效） |
+
+**决策：🔴 Request Changes。** B3 为一行条件反转的最小修复（`steps < 6` → `steps >= 6`），修复后按 §4 验收标准复跑行为断言即可；I2 建议同批修复。其余 nit 可随后处理。
+
+> 本报告写入 `${spec_dir}/cr_report.md`（任务指定交付路径），并同步副本至 `.agents/workflow/cr_report.md`；`review_blocker_count=1` 已写入 `${spec_dir}/run_context.json`（保留 guard_blocker_count 原值，该键属验收节点）。
